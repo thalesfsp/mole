@@ -14,13 +14,13 @@ import (
 	"github.com/thalesfsp/mole/fsutils"
 	"github.com/thalesfsp/mole/rpc"
 	"github.com/thalesfsp/mole/tunnel"
+	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/awnumar/memguard"
 	"github.com/gofrs/uuid"
 	"github.com/mitchellh/mapstructure"
 	daemon "github.com/sevlyar/go-daemon"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 const (
@@ -128,7 +128,9 @@ func (c *Client) Start() error {
 		return fmt.Errorf("can't start. Another instance is already using the same id %s", c.Conf.Id)
 	}
 
-	log.Infof("instance identifier is %s", c.Conf.Id)
+	// TODO: Use SYPL instead of Logrus.
+	//
+	// log.Infof("instance identifier is %s", c.Conf.Id)
 
 	if c.Conf.Detach {
 		var err error

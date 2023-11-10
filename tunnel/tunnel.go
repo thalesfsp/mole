@@ -435,10 +435,12 @@ func (t *Tunnel) connect() {
 
 			for {
 				once.Do(func() {
-					log.WithFields(log.Fields{
-						"source":      channel.Source,
-						"destination": channel.Destination,
-					}).Info("tunnel channel is waiting for connection")
+					// TODO: Use SYPL instead of Logrus.
+					//
+					// log.WithFields(log.Fields{
+					// 	"source":      channel.Source,
+					// 	"destination": channel.Destination,
+					// }).Info("tunnel channel is waiting for connection")
 
 					waitgroup.Done()
 				})
