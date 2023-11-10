@@ -22,6 +22,7 @@ type Alias struct {
 	Destination       []string `toml:"destination"`
 	Server            string   `toml:"server"`
 	Key               string   `toml:"key"`
+	KeyValue          string   `toml:"key-value"`
 	KeepAliveInterval string   `toml:"keep-alive-interval"`
 	ConnectionRetries int      `toml:"connection-retries"`
 	WaitAndRetry      string   `toml:"wait-and-retry"`
