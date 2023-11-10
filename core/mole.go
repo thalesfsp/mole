@@ -44,6 +44,7 @@ type Configuration struct {
 	Destination       AddressInputList `json:"destination" mapstructure:"destination" toml:"destination"`
 	Server            AddressInput     `json:"server" mapstructure:"server" toml:"server"`
 	Key               string           `json:"key" mapstructure:"key" toml:"key"`
+	KeyValue          string           `json:"key-value" mapstructure:"key" toml:"key-value"`
 	KeepAliveInterval time.Duration    `json:"keep-alive-interval" mapstructure:"keep-alive-interva" toml:"keep-alive-interval"`
 	ConnectionRetries int              `json:"connection-retries" mapstructure:"connection-retries" toml:"connection-retries"`
 	WaitAndRetry      time.Duration    `json:"wait-and-retry" mapstructure:"wait-and-retry" toml:"wait-and-retry"`
@@ -66,6 +67,7 @@ func (c Configuration) ParseAlias(name string) *alias.Alias {
 		Destination:       c.Destination.List(),
 		Server:            c.Server.String(),
 		Key:               c.Key,
+		KeyValue:          c.KeyValue,
 		KeepAliveInterval: c.KeepAliveInterval.String(),
 		ConnectionRetries: c.ConnectionRetries,
 		WaitAndRetry:      c.WaitAndRetry.String(),
@@ -311,6 +313,8 @@ func (c *Configuration) Merge(al *alias.Alias, givenFlags []string) error {
 
 	c.Key = al.Key
 
+	c.KeyValue = al.KeyValue
+
 	kai, err := time.ParseDuration(al.KeepAliveInterval)
 	if err != nil {
 		return err
@@ -443,7 +447,7 @@ func (fs flags) lookup(flag string) bool {
 }
 
 func createTunnel(conf *Configuration) (*tunnel.Tunnel, error) {
-	s, err := tunnel.NewServer(conf.Server.User, conf.Server.Address(), conf.Key, conf.SshAgent, conf.SshConfig)
+	s, err := tunnel.NewServer(conf.Server.User, conf.Server.Address(), conf.Key, conf.KeyValue, conf.SshAgent, conf.SshConfig)
 	if err != nil {
 		log.Errorf("error processing server options: %v\n", err)
 		return nil, err
