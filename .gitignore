@@ -1,0 +1,12 @@
+/bin/
+/coverage.txt
+/coverage.html
+
+/test-env/key
+/test-env/key.pub
+
+/tunnel/testdata/.ssh
+
+*.swp
+*~
+*.un~

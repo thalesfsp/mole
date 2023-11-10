@@ -1,0 +1,16 @@
+title: Mole
+email: davrodpin@gmail.com
+description: >-
+  Easily create SSH tunnels.
+baseurl: "/mole"
+url: ""
+twitter_username:
+github_username:
+
+# Build settings
+markdown: kramdown
+theme: jekyll-theme-cayman
+plugins:
+  - jekyll-feed
+kramdown:
+  parse_block_html: true
