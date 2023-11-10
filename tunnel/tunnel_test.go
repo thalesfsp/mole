@@ -16,10 +16,9 @@ import (
 
 	"github.com/phayes/freeport"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/knownhosts"
 )
 
-const NoSshRetries = -1
+const NoSSHRetries = -1
 
 var sshDir string
 var keyPath string
@@ -103,7 +102,7 @@ func TestServerOptions(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		s, err := NewServer(test.user, test.address, test.key, "", test.config)
+		s, err := NewServer(test.user, test.address, test.key, "", "", test.config)
 		if err != nil {
 			if test.expectedError != nil {
 				if test.expectedError.Error() != err.Error() {
@@ -121,7 +120,7 @@ func TestServerOptions(t *testing.T) {
 }
 
 func TestLocalTunnel(t *testing.T) {
-	c := &tunnelConfig{t, "local", 1, false, NoSshRetries}
+	c := &tunnelConfig{t, "local", 1, false, NoSSHRetries}
 	tun, _, _ := prepareTunnel(c)
 
 	select {
@@ -141,7 +140,7 @@ func TestLocalTunnel(t *testing.T) {
 }
 
 func TestRemoteTunnel(t *testing.T) {
-	c := &tunnelConfig{t, "remote", 1, true, NoSshRetries}
+	c := &tunnelConfig{t, "remote", 1, true, NoSSHRetries}
 	tun, _, _ := prepareTunnel(c)
 
 	select {
@@ -161,7 +160,7 @@ func TestRemoteTunnel(t *testing.T) {
 }
 
 func TestTunnelInsecure(t *testing.T) {
-	c := &tunnelConfig{t, "local", 1, true, NoSshRetries}
+	c := &tunnelConfig{t, "local", 1, true, NoSSHRetries}
 	tun, _, _ := prepareTunnel(c)
 
 	select {
@@ -181,7 +180,7 @@ func TestTunnelInsecure(t *testing.T) {
 }
 
 func TestTunnelMultipleDestinations(t *testing.T) {
-	c := &tunnelConfig{t, "local", 2, false, NoSshRetries}
+	c := &tunnelConfig{t, "local", 2, false, NoSSHRetries}
 	tun, _, _ := prepareTunnel(c)
 
 	select {
@@ -355,7 +354,7 @@ func TestBuildSSHChannels(t *testing.T) {
 		},
 	}
 
-	for testId, test := range tests {
+	for testID, test := range tests {
 		sshChannels, err := buildSSHChannels(test.serverName, "local", test.source, test.destination, test.config)
 		if err != nil {
 			if test.expectedError != nil {
@@ -363,12 +362,12 @@ func TestBuildSSHChannels(t *testing.T) {
 					t.Errorf("error '%v' was expected, but got '%v'", test.expectedError, err)
 				}
 			} else {
-				t.Errorf("unable to build ssh channels objects for test %d: %v", testId, err)
+				t.Errorf("unable to build ssh channels objects for test %d: %v", testID, err)
 			}
 		}
 
 		if test.expected != len(sshChannels) {
-			t.Errorf("wrong number of ssh channel objects created for test %d: expected: %d, value: %d", testId, test.expected, len(sshChannels))
+			t.Errorf("wrong number of ssh channel objects created for test %d: expected: %d, value: %d", testID, test.expected, len(sshChannels))
 		}
 
 		sourceSize := len(test.source)
@@ -387,7 +386,7 @@ func TestBuildSSHChannels(t *testing.T) {
 				source = expandAddress(source)
 
 				if sshChannel.Source != source {
-					t.Errorf("source address don't match for test %d: expected: %s, value: %s", testId, sshChannel.Source, source)
+					t.Errorf("source address don't match for test %d: expected: %s, value: %s", testID, sshChannel.Source, source)
 				}
 
 			}
@@ -421,12 +420,12 @@ func prepareTunnel(config *tunnelConfig) (tun *Tunnel, ssh net.Listener, hss []*
 		return
 	}
 
-	srv, _ := NewServer("mole", ssh.Addr().String(), "", "", "testdata/.ssh/config")
+	srv, _ := NewServer("mole", ssh.Addr().String(), "", "", "testdata/.ssh/config", "")
 
 	srv.Insecure = config.Insecure
 
 	if !config.Insecure {
-		err = generateKnownHosts(ssh.Addr(), publicKeyPath, knownHostsPath)
+		err = GenerateKnownHosts(ssh.Addr(), publicKeyPath, knownHostsPath)
 		if err != nil {
 			config.T.Errorf("error generating known hosts file for tests: %v\n", err)
 			return
@@ -438,7 +437,7 @@ func prepareTunnel(config *tunnelConfig) (tun *Tunnel, ssh net.Listener, hss []*
 	destination := make([]string, config.Destinations)
 
 	for i := 0; i <= (config.Destinations - 1); i++ {
-		l, hs := createHttpServer()
+		l, hs := createHTTPServer()
 		if config.TunnelType == "local" {
 			source[i] = "127.0.0.1:0"
 			destination[i] = l.Addr().String()
@@ -523,13 +522,13 @@ func prepareTestEnv() error {
 	return nil
 }
 
-// createHttpServer spawns a new http server, listening on a random port.
+// createHTTPServer spawns a new http server, listening on a random port.
 // The http server provided an endpoint, /XXX, that will respond, in plain
 // text, with the very same given string.
 //
 // Example: If the request URI is /this-is-a-test, the response will be
 // this-is-a-test
-func createHttpServer() (net.Listener, *http.Server) {
+func createHTTPServer() (net.Listener, *http.Server) {
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, r.URL.Path[1:])
@@ -669,23 +668,4 @@ func createSSHServer(t *testing.T, address string, keyPath string) (net.Listener
 	}(l)
 
 	return l, nil
-}
-
-// generateKnownHosts creates a new "known_hosts" file on a given path with a
-// single entry based on the given SSH server address and public key.
-func generateKnownHosts(sshAddr net.Addr, pubKeyPath, knownHostsPath string) error {
-	d, err := ioutil.ReadFile(pubKeyPath)
-	if err != nil {
-		return err
-	}
-
-	pk, _, _, _, err := ssh.ParseAuthorizedKey([]byte(d))
-	if err != nil {
-		return err
-	}
-
-	l := knownhosts.Line([]string{sshAddr.String()}, pk)
-	ioutil.WriteFile(knownHostsPath, []byte(l), 0600)
-
-	return nil
 }
