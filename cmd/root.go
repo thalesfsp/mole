@@ -39,6 +39,7 @@ multiple -source conf can be provided`)
 multiple -destination conf can be provided`)
 	cmd.Flags().VarP(&conf.Server, "server", "s", "set server address: [<user>@]<host>[:<port>]")
 	cmd.Flags().StringVarP(&conf.Key, "key", "k", "", "set server authentication key file path")
+	cmd.Flags().StringVar(&conf.KeyValue, "key-value", "", "set server authentication key")
 	cmd.Flags().DurationVarP(&conf.KeepAliveInterval, "keep-alive-interval", "K", 10*time.Second, "time interval for keep alive packets to be sent")
 	cmd.Flags().IntVarP(&conf.ConnectionRetries, "connection-retries", "R", 3, `maximum number of connection retries to the ssh server
 provide 0 to never give up or a negative number to disable`)
