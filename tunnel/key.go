@@ -26,6 +26,7 @@ type PemKey struct {
 	passphrase *memguard.LockedBuffer
 }
 
+// NewPemKey creates a new PemKey from a file path.
 func NewPemKey(keyPath, passphrase string) (*PemKey, error) {
 	data, err := ioutil.ReadFile(keyPath)
 	if err != nil {
@@ -33,6 +34,17 @@ func NewPemKey(keyPath, passphrase string) (*PemKey, error) {
 	}
 
 	k := &PemKey{Data: data}
+
+	if passphrase != "" {
+		k.updatePassphrase([]byte(passphrase))
+	}
+
+	return k, nil
+}
+
+// NewPemKeyFromValue creates a new PemKey from a string key.
+func NewPemKeyFromValue(key string, passphrase string) (*PemKey, error) {
+	k := &PemKey{Data: []byte(key)}
 
 	if passphrase != "" {
 		k.updatePassphrase([]byte(passphrase))
