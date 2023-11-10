@@ -4,10 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/andreyvit/diff"
 	mole "github.com/thalesfsp/mole/core"
 	"github.com/thalesfsp/mole/fsutils"
-
-	"github.com/andreyvit/diff"
 )
 
 const expectedInstance string = `id = "id1"
@@ -16,6 +15,7 @@ verbose = false
 insecure = false
 detach = false
 key = ""
+key-value = ""
 keep-alive-interval = 0
 connection-retries = 0
 wait-and-retry = 0
@@ -38,6 +38,7 @@ const expectedMultipleInstances string = `[instances]
     insecure = false
     detach = false
     key = ""
+    key-value = ""
     keep-alive-interval = 0
     connection-retries = 0
     wait-and-retry = 0
@@ -57,6 +58,7 @@ const expectedMultipleInstances string = `[instances]
     insecure = false
     detach = false
     key = ""
+    key-value = ""
     keep-alive-interval = 0
     connection-retries = 0
     wait-and-retry = 0
