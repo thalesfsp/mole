@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -40,7 +41,7 @@ type Server struct {
 // NewServer creates a new instance of Server using $HOME/.ssh/config to
 // resolve the missing connection attributes (e.g. user, hostname, port, key
 // and ssh agent) required to connect to the remote server, if any.
-func NewServer(user, address, key, sshAgent, cfgPath string) (*Server, error) {
+func NewServer(user, address, key, keyValue, sshAgent, cfgPath string) (*Server, error) {
 	var host string
 	var hostname string
 	var port string
@@ -90,18 +91,31 @@ func NewServer(user, address, key, sshAgent, cfgPath string) (*Server, error) {
 		return nil, fmt.Errorf("no user could be found for server %s", host)
 	}
 
-	if key == "" {
-		home, err := os.UserHomeDir()
+	var pk *PemKey
+
+	if keyValue != "" {
+		returnedPK, err := NewPemKeyFromValue(keyValue, "")
 		if err != nil {
-			return nil, fmt.Errorf("could not obtain user home directory: %v", err)
+			return nil, fmt.Errorf("error while reading key %s: %v", key, err)
 		}
 
-		key = filepath.Join(home, ".ssh", "id_rsa")
-	}
+		pk = returnedPK
+	} else {
+		if key == "" {
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return nil, fmt.Errorf("could not obtain user home directory: %v", err)
+			}
 
-	pk, err := NewPemKey(key, "")
-	if err != nil {
-		return nil, fmt.Errorf("error while reading key %s: %v", key, err)
+			key = filepath.Join(home, ".ssh", "id_rsa")
+		}
+
+		returnedPK, err := NewPemKey(key, "")
+		if err != nil {
+			return nil, fmt.Errorf("error while reading key %s: %v", key, err)
+		}
+
+		pk = returnedPK
 	}
 
 	if strings.HasPrefix(sshAgent, "$") {
@@ -663,4 +677,21 @@ func getForward(channelType, serverName string, cfgPath string) (*ForwardConfig,
 	}
 
 	return f, nil
+}
+
+// GenerateKnownHosts creates a new "known_hosts" file on a given path with a
+// single entry based on the given SSH server address and public key.
+func GenerateKnownHosts(sshAddr net.Addr, pubKeyPath, knownHostsPath string) error {
+	d, err := ioutil.ReadFile(pubKeyPath)
+	if err != nil {
+		return err
+	}
+
+	pk, _, _, _, err := ssh.ParseAuthorizedKey([]byte(d))
+	if err != nil {
+		return err
+	}
+
+	l := knownhosts.Line([]string{sshAddr.String()}, pk)
+	return ioutil.WriteFile(knownHostsPath, []byte(l), 0600)
 }
